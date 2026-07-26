@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>文化＋！串 | 留下你的文化印記</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    font-family: -apple-system, "PingFang TC", "Microsoft JhengHei", sans-serif;
+    max-width: 480px;
+    margin: 0 auto;
+    padding: 20px 16px 40px;
+    background: #f7f5f0;
+    color: #1a1a1a;
+  }
+  .logo-wrap { text-align: center; margin-bottom: 20px; }
+  .logo-wrap img { width: 100%; max-width: 360px; }
+
+  h2 { font-size: 17px; margin: 0 0 6px; }
+  .sub { font-size: 13px; color: #5f5e5a; margin-bottom: 16px; }
+
+  .upload-box {
+    border: 2px dashed #b4b2a9;
+    border-radius: 16px;
+    background: #fff;
+    text-align: center;
+    padding: 24px 16px;
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+  }
+  .upload-box.has-image { border-style: solid; border-color: #1a1a1a; padding: 0; }
+  .upload-box input[type=file] {
+    position: absolute; inset: 0; opacity: 0; cursor: pointer;
+  }
+  .upload-hint { font-size: 14px; color: #5f5e5a; }
+  .upload-hint .big { font-size: 32px; display: block; margin-bottom: 8px; }
+  #preview {
+    display: none; width: 100%; max-height: 360px; object-fit: cover; border-radius: 14px;
+  }
+
+  .field { margin-top: 22px; }
+  label { display: block; font-size: 14px; font-weight: 500; margin-bottom: 8px; }
+  textarea {
+    width: 100%; padding: 12px; border: 1px solid #d3d1c7; border-radius: 10px;
+    font-size: 15px; background: #fff; resize: none; font-family: inherit;
+  }
+  .char-count { text-align: right; font-size: 12px; color: #b4b2a9; margin-top: 4px; }
+
+  button.submit {
+    width: 100%; padding: 15px; margin-top: 22px; border: none; border-radius: 12px;
+    background: #1a1a1a; color: #fff; font-size: 16px; font-weight: 500; cursor: pointer;
+  }
+  button.submit:disabled { background: #b4b2a9; cursor: not-allowed; }
+
+  .result { margin-top: 16px; padding: 14px; border-radius: 10px; background: #eaf3de; font-size: 14px; display: none; text-align: center; }
+  .error { margin-top: 16px; padding: 14px; border-radius: 10px; background: #fcebeb; font-size: 14px; display: none; }
+</style>
+</head>
+<body>
+
+<div class="logo-wrap">
+  <img src="assets/logo.png" alt="文化＋！串 CHIAYI CULTURE CONNECT">
+</div>
+
+<h2>上傳一張照片</h2>
+<div class="sub">留下這一刻，我們會幫你印成小卡</div>
+
+<div class="upload-box" id="uploadBox">
+  <input type="file" id="photoInput" accept="image/*" capture="environment">
+  <div class="upload-hint" id="uploadHint">
+    <span class="big">＋</span>
+    點這裡上傳或拍照
+  </div>
+  <img id="preview">
+</div>
+
+<div class="field">
+  <label>你覺得文化是什麼？請寫一句話</label>
+  <textarea id="quote" rows="3" maxlength="60" placeholder="例如：文化是阿嬤手上那道菜的味道"></textarea>
+  <div class="char-count"><span id="quoteLen">0</span>/60</div>
+</div>
+
+<button class="submit" id="submitBtn" disabled>送出並列印成品</button>
+
+<div class="result" id="result"></div>
+<div class="error" id="errorBox"></div>
+
+<script>
+// ⚠️ 請把這裡換成您實際部署的後端網址
+const API_BASE_URL = "https://culture-connect-backend.onrender.com";
+
+let selectedFile = null;
+
+const uploadBox = document.getElementById('uploadBox');
+const photoInput = document.getElementById('photoInput');
+const preview = document.getElementById('preview');
+const uploadHint = document.getElementById('uploadHint');
+const quote = document.getElementById('quote');
+const quoteLen = document.getElementById('quoteLen');
+const submitBtn = document.getElementById('submitBtn');
+
+photoInput.addEventListener('change', () => {
+  const file = photoInput.files[0];
+  if (!file) return;
+  selectedFile = file;
+
+  const reader = new FileReader();
+  reader.onload = e => {
+    preview.src = e.target.result;
+    preview.style.display = 'block';
+    uploadHint.style.display = 'none';
+    uploadBox.classList.add('has-image');
+  };
+  reader.readAsDataURL(file);
+
+  updateSubmitState();
+});
+
+quote.addEventListener('input', () => {
+  quoteLen.textContent = quote.value.length;
+  updateSubmitState();
+});
+
+function updateSubmitState() {
+  submitBtn.disabled = !(selectedFile && quote.value.trim().length > 0);
+}
+
+submitBtn.addEventListener('click', async () => {
+  submitBtn.disabled = true;
+  submitBtn.textContent = '送出中...';
+
+  try {
+    const formData = new FormData();
+    formData.append('photo', selectedFile);
+    formData.append('quote', quote.value.trim());
+
+    const res = await fetch(`${API_BASE_URL}/api/submissions`, {
+      method: 'POST',
+      body: formData,
+    });
+
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || '送出失敗');
+
+    document.getElementById('result').style.display = 'block';
+    document.getElementById('result').textContent = '已送出！小卡正在為你印出，請稍候取件 :)';
+    document.getElementById('errorBox').style.display = 'none';
+
+    // 重置表單
+    selectedFile = null;
+    photoInput.value = '';
+    preview.style.display = 'none';
+    uploadHint.style.display = 'block';
+    uploadBox.classList.remove('has-image');
+    quote.value = '';
+    quoteLen.textContent = '0';
+  } catch (err) {
+    document.getElementById('errorBox').style.display = 'block';
+    document.getElementById('errorBox').textContent = '送出失敗，請確認網路連線後再試一次：' + err.message;
+  } finally {
+    submitBtn.textContent = '送出並列印成品';
+    updateSubmitState();
+  }
+});
+</script>
+
+</body>
+</html>
