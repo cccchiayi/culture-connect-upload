@@ -93,6 +93,41 @@ const API_BASE_URL = "https://your-culture-backend.example.com";
 
 let selectedFile = null;
 
+// 手機直接拍的照片常常好幾 MB，在訊號不好時容易上傳失敗或逾時。
+// 這裡在選好照片後，先在瀏覽器內把照片縮小、壓縮，再準備上傳，
+// 大幅降低上傳失敗的機率，畫質對於 75x100mm 小卡來說也完全足夠。
+function compressImage(file, maxSize = 1600, quality = 0.82) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    const reader = new FileReader();
+    reader.onload = e => {
+      img.onload = () => {
+        let { width, height } = img;
+        if (width > height && width > maxSize) {
+          height = Math.round(height * (maxSize / width));
+          width = maxSize;
+        } else if (height >= width && height > maxSize) {
+          width = Math.round(width * (maxSize / height));
+          height = maxSize;
+        }
+        const canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
+        canvas.getContext('2d').drawImage(img, 0, 0, width, height);
+        canvas.toBlob(
+          blob => resolve(blob ? new File([blob], file.name.replace(/\.\w+$/, '') + '.jpg', { type: 'image/jpeg' }) : file),
+          'image/jpeg',
+          quality
+        );
+      };
+      img.onerror = () => resolve(file); // 萬一縮圖失敗，退回用原始檔案
+      img.src = e.target.result;
+    };
+    reader.onerror = () => resolve(file);
+    reader.readAsDataURL(file);
+  });
+}
+
 const uploadBox = document.getElementById('uploadBox');
 const photoInput = document.getElementById('photoInput');
 const preview = document.getElementById('preview');
@@ -101,10 +136,14 @@ const quote = document.getElementById('quote');
 const quoteLen = document.getElementById('quoteLen');
 const submitBtn = document.getElementById('submitBtn');
 
-photoInput.addEventListener('change', () => {
+photoInput.addEventListener('change', async () => {
   const file = photoInput.files[0];
   if (!file) return;
-  selectedFile = file;
+
+  // 先壓縮，壓縮完的檔案才是真正拿去預覽跟上傳的檔案
+  uploadHint.innerHTML = '照片處理中...';
+  const compressed = await compressImage(file);
+  selectedFile = compressed;
 
   const reader = new FileReader();
   reader.onload = e => {
@@ -113,7 +152,7 @@ photoInput.addEventListener('change', () => {
     uploadHint.style.display = 'none';
     uploadBox.classList.add('has-image');
   };
-  reader.readAsDataURL(file);
+  reader.readAsDataURL(compressed);
 
   updateSubmitState();
 });
@@ -152,6 +191,7 @@ submitBtn.addEventListener('click', async () => {
     selectedFile = null;
     photoInput.value = '';
     preview.style.display = 'none';
+    uploadHint.innerHTML = '<span class="big">＋</span>點這裡上傳或拍照';
     uploadHint.style.display = 'block';
     uploadBox.classList.remove('has-image');
     quote.value = '';
