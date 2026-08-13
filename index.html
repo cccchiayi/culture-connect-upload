@@ -28,7 +28,7 @@
     cursor: pointer;
     position: relative;
     overflow: hidden;
-    aspect-ratio: 4 / 3;
+    aspect-ratio: 3 / 4;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -165,7 +165,7 @@ async function selectSample(src, el) {
 }
 
 // 手機直接拍的照片常常好幾 MB，在訊號不好時容易上傳失敗或逾時。
-// 這裡在選好照片後，先裁切成 4:3 比例（跟預覽框、跟最後印出來的小卡一致），
+// 這裡在選好照片後，先裁切成 3:4 直式比例（跟預覽框、跟最後印出來的小卡一致），
 // 再縮小、壓縮，大幅降低上傳失敗的機率，畫質對於 75x100mm 小卡來說也完全足夠。
 function compressImage(file, maxSize = 1600, quality = 0.82) {
   return new Promise((resolve) => {
@@ -173,7 +173,7 @@ function compressImage(file, maxSize = 1600, quality = 0.82) {
     const reader = new FileReader();
     reader.onload = e => {
       img.onload = () => {
-        const targetRatio = 4 / 3;
+        const targetRatio = 3 / 4; // 寬:高，直式構圖
         let { width: sw, height: sh } = img;
         let cropW = sw, cropH = sh;
         if (sw / sh > targetRatio) {
@@ -184,9 +184,13 @@ function compressImage(file, maxSize = 1600, quality = 0.82) {
         const sx = (sw - cropW) / 2;
         const sy = (sh - cropH) / 2;
 
-        let outW = maxSize;
-        let outH = Math.round(maxSize / targetRatio);
-        if (cropW < maxSize) { outW = Math.round(cropW); outH = Math.round(cropH); }
+        let outW = cropW, outH = cropH;
+        const longSide = Math.max(cropW, cropH);
+        if (longSide > maxSize) {
+          const scale = maxSize / longSide;
+          outW = Math.round(cropW * scale);
+          outH = Math.round(cropH * scale);
+        }
 
         const canvas = document.createElement('canvas');
         canvas.width = outW;
