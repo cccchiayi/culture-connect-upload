@@ -76,6 +76,18 @@
 
   .result { margin-top: 16px; padding: 14px; border-radius: 10px; background: #eaf3de; font-size: 14px; display: none; text-align: center; }
   .error { margin-top: 16px; padding: 14px; border-radius: 10px; background: #fcebeb; font-size: 14px; display: none; }
+
+  .coupon-screen { text-align: center; padding: 60px 16px 40px; }
+  .coupon-screen h2 { font-size: 20px; }
+  .coupon-screen .sub { margin-bottom: 28px; }
+  .coupon-qr-img {
+    width: 220px; height: 220px; margin: 8px auto 24px; display: block;
+    border: 1px solid #d3d1c7; border-radius: 12px; background: #fff;
+    padding: 14px; box-sizing: content-box; image-rendering: pixelated;
+  }
+  button.submit.secondary {
+    background: #fff; color: #1a1a1a; border: 1px solid #b4b2a9; margin-top: 10px;
+  }
 </style>
 </head>
 <body>
@@ -83,6 +95,8 @@
 <div class="logo-wrap">
   <img src="assets/logo.png" alt="文化＋！串 CHIAYI CULTURE CONNECT">
 </div>
+
+<div id="formSection">
 
 <h2>上傳一張照片</h2>
 <div class="sub">留下這一刻，我們會幫你印成小卡</div>
@@ -109,6 +123,26 @@
 
 <div class="result" id="result"></div>
 <div class="error" id="errorBox"></div>
+
+</div>
+
+<div class="coupon-screen" id="couponPromptSection" style="display:none;">
+  <h2>要不要順便領取</h2>
+  <div class="sub">串燒店續攤優惠券？</div>
+  <button class="submit" id="couponYesBtn">要領取</button>
+  <button class="submit secondary" id="couponNoBtn">不需要，謝謝</button>
+</div>
+
+<div class="coupon-screen" id="couponQrSection" style="display:none;">
+  <h2>續攤優惠券</h2>
+  <div class="sub">出示這張 QR Code 給店家即可折抵</div>
+  <img src="assets/coupon-qr.png" class="coupon-qr-img" alt="續攤優惠券 QR Code">
+</div>
+
+<div class="coupon-screen" id="thankyouSection" style="display:none;">
+  <h2>謝謝光臨</h2>
+  <div class="sub">期待你下次再來探索嘉義文化 :)</div>
+</div>
 
 <script>
 // ⚠️ 請把這裡換成您實際部署的後端網址
@@ -281,6 +315,12 @@ submitBtn.addEventListener('click', async () => {
     document.querySelectorAll('.sample-thumb').forEach(t => t.classList.remove('selected'));
     quote.value = '';
     quoteLen.textContent = '0';
+
+    // 停留一下讓使用者看到「已送出」的訊息，接著切換到優惠券詢問畫面
+    setTimeout(() => {
+      document.getElementById('formSection').style.display = 'none';
+      document.getElementById('couponPromptSection').style.display = 'block';
+    }, 1800);
   } catch (err) {
     document.getElementById('errorBox').style.display = 'block';
     document.getElementById('errorBox').textContent = '送出失敗，請確認網路連線後再試一次：' + err.message;
@@ -288,6 +328,16 @@ submitBtn.addEventListener('click', async () => {
     submitBtn.textContent = '送出並列印成品';
     updateSubmitState();
   }
+});
+
+document.getElementById('couponYesBtn').addEventListener('click', () => {
+  document.getElementById('couponPromptSection').style.display = 'none';
+  document.getElementById('couponQrSection').style.display = 'block';
+});
+
+document.getElementById('couponNoBtn').addEventListener('click', () => {
+  document.getElementById('couponPromptSection').style.display = 'none';
+  document.getElementById('thankyouSection').style.display = 'block';
 });
 </script>
 
