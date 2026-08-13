@@ -43,6 +43,23 @@
     display: none; width: 100%; height: 100%; object-fit: cover;
   }
 
+  .or-divider {
+    text-align: center; font-size: 12px; color: #b4b2a9;
+    margin: 16px 0 10px; display: flex; align-items: center; gap: 10px;
+  }
+  .or-divider::before, .or-divider::after {
+    content: ''; flex: 1; height: 1px; background: #e3e1d8;
+  }
+  .sample-gallery {
+    display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px;
+  }
+  .sample-thumb {
+    aspect-ratio: 1 / 1; border-radius: 10px; overflow: hidden;
+    border: 2px solid transparent; cursor: pointer; background: #fff;
+  }
+  .sample-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .sample-thumb.selected { border-color: #1a1a1a; }
+
   .field { margin-top: 22px; }
   label { display: block; font-size: 14px; font-weight: 500; margin-bottom: 8px; }
   textarea {
@@ -79,6 +96,9 @@
   <img id="preview">
 </div>
 
+<div class="or-divider">或從範例圖片選一張</div>
+<div class="sample-gallery" id="sampleGallery"></div>
+
 <div class="field">
   <label>你覺得文化是什麼？請寫一句話</label>
   <textarea id="quote" rows="3" maxlength="60" placeholder="例如：文化是阿嬤手上那道菜的味道"></textarea>
@@ -95,6 +115,54 @@
 const API_BASE_URL = "https://your-culture-backend.example.com";
 
 let selectedFile = null;
+
+// 範例圖片：放在 assets/samples/ 資料夾，命名為 sample-01.jpg、sample-02.jpg...
+// 之後要增減張數，只要改這個數字並把對應檔案放進資料夾即可。
+const SAMPLE_COUNT = 28;
+
+function renderSamples() {
+  const gallery = document.getElementById('sampleGallery');
+  let html = '';
+  for (let i = 1; i <= SAMPLE_COUNT; i++) {
+    const n = String(i).padStart(2, '0');
+    html += `<div class="sample-thumb" data-src="assets/samples/sample-${n}.jpg">
+      <img src="assets/samples/sample-${n}.jpg" loading="lazy">
+    </div>`;
+  }
+  gallery.innerHTML = html;
+  gallery.querySelectorAll('.sample-thumb').forEach(thumb => {
+    thumb.addEventListener('click', () => selectSample(thumb.dataset.src, thumb));
+  });
+}
+renderSamples();
+
+async function selectSample(src, el) {
+  document.querySelectorAll('.sample-thumb').forEach(t => t.classList.remove('selected'));
+  el.classList.add('selected');
+
+  uploadHint.innerHTML = '照片處理中...';
+  try {
+    const res = await fetch(src);
+    const blob = await res.blob();
+    const file = new File([blob], 'sample.jpg', { type: blob.type || 'image/jpeg' });
+    const compressed = await compressImage(file);
+    selectedFile = compressed;
+
+    const reader = new FileReader();
+    reader.onload = ev => {
+      preview.src = ev.target.result;
+      preview.style.display = 'block';
+      uploadHint.style.display = 'none';
+      uploadBox.classList.add('has-image');
+    };
+    reader.readAsDataURL(compressed);
+    updateSubmitState();
+  } catch (err) {
+    uploadHint.innerHTML = '<span class="big">＋</span>點這裡上傳或拍照';
+    el.classList.remove('selected');
+    alert('範例圖片載入失敗，請再試一次');
+  }
+}
 
 // 手機直接拍的照片常常好幾 MB，在訊號不好時容易上傳失敗或逾時。
 // 這裡在選好照片後，先裁切成 4:3 比例（跟預覽框、跟最後印出來的小卡一致），
@@ -150,6 +218,8 @@ photoInput.addEventListener('change', async () => {
   const file = photoInput.files[0];
   if (!file) return;
 
+  document.querySelectorAll('.sample-thumb').forEach(t => t.classList.remove('selected'));
+
   // 先壓縮，壓縮完的檔案才是真正拿去預覽跟上傳的檔案
   uploadHint.innerHTML = '照片處理中...';
   const compressed = await compressImage(file);
@@ -204,6 +274,7 @@ submitBtn.addEventListener('click', async () => {
     uploadHint.innerHTML = '<span class="big">＋</span>點這裡上傳或拍照';
     uploadHint.style.display = 'block';
     uploadBox.classList.remove('has-image');
+    document.querySelectorAll('.sample-thumb').forEach(t => t.classList.remove('selected'));
     quote.value = '';
     quoteLen.textContent = '0';
   } catch (err) {
