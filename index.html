@@ -68,7 +68,7 @@
 <div class="sub">留下這一刻，我們會幫你印成小卡</div>
 
 <div class="upload-box" id="uploadBox">
-  <input type="file" id="photoInput" accept="image/*" capture="environment">
+  <input type="file" id="photoInput" accept="image/*">
   <div class="upload-hint" id="uploadHint">
     <span class="big">＋</span>
     點這裡上傳或拍照
@@ -89,7 +89,7 @@
 
 <script>
 // ⚠️ 請把這裡換成您實際部署的後端網址
-const API_BASE_URL = "https://culture-connect-backend.onrender.com";
+const API_BASE_URL = "https://your-culture-backend.example.com";
 
 let selectedFile = null;
 
