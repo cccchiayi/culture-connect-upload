@@ -44,7 +44,7 @@
   }
 
   .or-divider {
-    text-align: center; font-size: 12px; color: #b4b2a9;
+    text-align: center; font-size: 16px; font-weight: 600; color: #1a1a1a;
     margin: 16px 0 10px; display: flex; align-items: center; gap: 10px;
   }
   .or-divider::before, .or-divider::after {
@@ -67,6 +67,7 @@
     font-size: 15px; background: #fff; resize: none; font-family: inherit;
   }
   .char-count { text-align: right; font-size: 12px; color: #b4b2a9; margin-top: 4px; }
+  .print-hint { color: #c0392b; font-size: 16px; font-weight: 700; text-align: center; margin-top: 20px; }
 
   button.submit {
     width: 100%; padding: 15px; margin-top: 22px; border: none; border-radius: 12px;
@@ -98,8 +99,8 @@
 
 <div id="formSection">
 
-<h2>上傳一張照片</h2>
-<div class="sub">留下這一刻，我們會幫你印成小卡</div>
+<h2>上傳、拍照或選擇以下範例照片</h2>
+<div class="sub">拍照打卡留下這一刻，列印出屬於您的文化收據。</div>
 
 <div class="upload-box" id="uploadBox">
   <input type="file" id="photoInput" accept="image/*">
@@ -114,11 +115,12 @@
 <div class="sample-gallery" id="sampleGallery"></div>
 
 <div class="field">
-  <label>你覺得文化是什麼？請寫一句話</label>
+  <label>留下一句：你覺得文化是甚麼？／甚麼是文化？</label>
   <textarea id="quote" rows="3" maxlength="60" placeholder="例如：文化是阿嬤手上那道菜的味道"></textarea>
   <div class="char-count"><span id="quoteLen">0</span>/60</div>
 </div>
 
+<div class="print-hint">領取收據時，請壓住標籤機，由右往左撕！！</div>
 <button class="submit" id="submitBtn" disabled>送出並列印成品</button>
 
 <div class="result" id="result"></div>
